@@ -7,7 +7,7 @@ public class ConcurrentQueue<T> {
     var queue: Queue<T>
     let timeSleep: Double
 
-    init(maxSize: Int? = nil, timeSleep: Double = 0.001) {
+    public init(maxSize: Int? = nil, timeSleep: Double = 0.001) {
         queue = Queue<T>(maxSize: maxSize)
         self.timeSleep = timeSleep
     }

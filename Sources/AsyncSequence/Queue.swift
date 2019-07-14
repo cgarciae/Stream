@@ -19,7 +19,7 @@ public class Queue<T> {
 
     private let maxSize: Int?
 
-    init(maxSize: Int? = nil) {
+    public init(maxSize: Int? = nil) {
         self.maxSize = maxSize
     }
 
