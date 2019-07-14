@@ -1,9 +1,9 @@
 import Foundation
 
-let DISPATCH = DispatchQueue(label: "AsyncSequence", attributes: .concurrent)
-let MAX_TASKS = ProcessInfo.processInfo.activeProcessorCount
+public let DISPATCH = DispatchQueue(label: "AsyncSequence", attributes: .concurrent)
+public let MAX_TASKS = ProcessInfo.processInfo.activeProcessorCount
 
-extension Sequence {
+public extension Sequence {
     func asyncApply<B>(
         maxTasks: Int? = MAX_TASKS,
         maxSize: Int? = nil,
