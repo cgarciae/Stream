@@ -1,19 +1,41 @@
 import Foundation
 
 public let DISPATCH = DispatchQueue(label: "Stream", attributes: .concurrent)
-public let MAX_TASKS = ProcessInfo.processInfo.activeProcessorCount
+public let CPU_COUNT = ProcessInfo.processInfo.activeProcessorCount
 
-public extension Sequence {
-    func parallelApply<B>(
-        maxTasks: Int? = MAX_TASKS,
-        maxSize: Int? = nil,
+public struct Stream<Base: Sequence> {
+    // @usableFromInline
+    internal var _base: Base
+
+    /// Creates a sequence that has the same elements as `base`, but on
+    /// which some operations such as `map` and `filter` are implemented
+    /// lazily.
+    // @inlinable // lazy-performance
+    internal init(_ _base: Base) {
+        self._base = _base
+    }
+}
+
+extension Stream: LazySequenceProtocol {
+    public typealias Element = Base.Element
+    public typealias Iterator = Base.Iterator
+
+    public func makeIterator() -> Self.Iterator {
+        return _base.makeIterator()
+    }
+}
+
+internal extension Stream {
+    func apply<B>(
+        maxTasks: Int? = CPU_COUNT,
+        queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (ConcurrentQueue<B?>, Element) throws -> Void
-    ) -> AnySequence<B> {
-        return AnySequence<B> { () -> AnyIterator<B> in
+    ) -> Stream<AnySequence<B>> {
+        let sequence = AnySequence<B> { () -> AnyIterator<B> in
 
             var first = true
-            let queue = ConcurrentQueue<B?>(maxSize: maxSize)
+            let queue = ConcurrentQueue<B?>(maxSize: queueMax)
 
             return AnyIterator<B> { () -> B? in
                 if first {
@@ -44,53 +66,81 @@ public extension Sequence {
                 return queue.get()
             }
         }
+
+        return Stream<AnySequence>(sequence)
     }
 
-    func parallelMap<B>(
-        maxTasks: Int? = MAX_TASKS,
-        maxSize: Int? = nil,
+    func map<B>(
+        maxTasks: Int? = CPU_COUNT,
+        queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> B
-    ) -> AnySequence<B> {
-        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
+    ) -> Stream<AnySequence<B>> {
+        apply(
+            maxTasks: maxTasks,
+            queueMax: queueMax,
+            dispatch: dispatch
+        ) { queue, elem in
             queue.put(try! f(elem))
         }
     }
 
-    func parallelFlatMap<B, S: Sequence>(
-        maxTasks: Int? = MAX_TASKS,
-        maxSize: Int? = nil,
+    func flatMap<B, S: Sequence>(
+        maxTasks: Int? = CPU_COUNT,
+        queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> S
-    ) -> AnySequence<B> where S.Element == B {
-        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
+    ) -> Stream<AnySequence<B>> where S.Element == B {
+        apply(
+            maxTasks: maxTasks,
+            queueMax: queueMax,
+            dispatch: dispatch
+        ) { queue, elem in
             for elem in try! f(elem) {
                 queue.put(elem)
             }
         }
     }
 
-    func parallelFilter(
-        maxTasks: Int? = MAX_TASKS,
-        maxSize: Int? = nil,
+    func filter(
+        maxTasks: Int? = CPU_COUNT,
+        queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> Bool
-    ) -> AnySequence<Element> {
-        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
+    ) -> Stream<AnySequence<Element>> {
+        apply(maxTasks: maxTasks, queueMax: queueMax, dispatch: dispatch) { queue, elem in
             if try! f(elem) {
                 queue.put(elem)
             }
         }
     }
 
-    func parallelForEach(
-        maxTasks: Int? = MAX_TASKS,
-        maxSize: Int? = nil,
+    func forEach(
+        maxTasks: Int? = CPU_COUNT,
+        queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> Void
     ) {
-        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { _, elem in
+        apply(
+            maxTasks: maxTasks,
+            queueMax: queueMax,
+            dispatch: dispatch
+        ) { _, elem in
             try! f(elem)
-        }.forEach {}
+        }
+        .makeIterator()
+        .forEach {}
+    }
+}
+
+public extension Sequence {
+    var stream: Stream<Self> {
+        Stream(self)
+    }
+}
+
+public extension Stream {
+    var stream: Stream {
+        self
     }
 }
