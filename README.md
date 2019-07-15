@@ -17,6 +17,8 @@ It might work on other compatible package managers.
 ## Example
 Any `Sequence` can be converted into a `Stream` via the `.stream` property, after that you can use its custom functional methods like `map`, `filter`, etc, to process the data in parallel / concurrently:
 ```swift
+import Stream
+
 _ = getURLs()
     .stream
     .map {
@@ -37,6 +39,8 @@ _ = getURLs()
 #### Back-pressure
 To manage resources you can use the `maxTasks` and `queueMax` parameters: 
 ```swift
+import Stream
+
 _ = getURLs()
     .stream
     .map(maxTasks: 4, queueMax: 10) {
