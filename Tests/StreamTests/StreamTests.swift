@@ -1,23 +1,23 @@
-@testable import AsyncSequence
+@testable import Stream
 import XCTest
 
-final class AsyncSequenceTests: XCTestCase {
+final class StreamTests: XCTestCase {
     func testMap() {
-        let async = (1 ... 10).asyncMap { $0 + 1 }
+        let async = (1 ... 10).parallelMap { $0 + 1 }
         let sync = (1 ... 10).map { $0 + 1 }
 
         XCTAssertEqual(Set(async), Set(sync))
     }
 
     func testFilter() {
-        let async = (1 ... 10).asyncFilter { $0 % 2 == 0 }
+        let async = (1 ... 10).parallelFilter { $0 % 2 == 0 }
         let sync = (1 ... 10).filter { $0 % 2 == 0 }
 
         XCTAssertEqual(Set(async), Set(sync))
     }
 
     func testFlatMap() {
-        let async = (1 ... 10).asyncFlatMap { [$0, -$0] }
+        let async = (1 ... 10).parallelFlatMap { [$0, -$0] }
         let sync = (1 ... 10).flatMap { [$0, -$0] }
 
         XCTAssertEqual(Set(async), Set(sync))
@@ -28,7 +28,7 @@ final class AsyncSequenceTests: XCTestCase {
         var sync = [Int]()
         let lock = Lock()
 
-        (1 ... 10).asyncForEach { x in lock.aquire { async.append(x) } }
+        (1 ... 10).parallelForEach { x in lock.aquire { async.append(x) } }
         (1 ... 10).forEach { sync.append($0) }
 
         XCTAssertEqual(Set(async), Set(sync))

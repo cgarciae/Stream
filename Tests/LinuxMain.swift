@@ -1,7 +1,7 @@
 import XCTest
 
-import AsyncSequenceTests
+import StreamTests
 
 var tests = [XCTestCaseEntry]()
-tests += AsyncSequenceTests.allTests()
+tests += StreamTests.allTests()
 XCTMain(tests)

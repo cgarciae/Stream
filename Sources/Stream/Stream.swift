@@ -1,10 +1,10 @@
 import Foundation
 
-public let DISPATCH = DispatchQueue(label: "AsyncSequence", attributes: .concurrent)
+public let DISPATCH = DispatchQueue(label: "Stream", attributes: .concurrent)
 public let MAX_TASKS = ProcessInfo.processInfo.activeProcessorCount
 
 public extension Sequence {
-    func asyncApply<B>(
+    func parallelApply<B>(
         maxTasks: Int? = MAX_TASKS,
         maxSize: Int? = nil,
         dispatch: DispatchQueue? = nil,
@@ -46,50 +46,50 @@ public extension Sequence {
         }
     }
 
-    func asyncMap<B>(
+    func parallelMap<B>(
         maxTasks: Int? = MAX_TASKS,
         maxSize: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> B
     ) -> AnySequence<B> {
-        asyncApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
+        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
             queue.put(try! f(elem))
         }
     }
 
-    func asyncFlatMap<B, S: Sequence>(
+    func parallelFlatMap<B, S: Sequence>(
         maxTasks: Int? = MAX_TASKS,
         maxSize: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> S
     ) -> AnySequence<B> where S.Element == B {
-        asyncApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
+        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
             for elem in try! f(elem) {
                 queue.put(elem)
             }
         }
     }
 
-    func asyncFilter(
+    func parallelFilter(
         maxTasks: Int? = MAX_TASKS,
         maxSize: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> Bool
     ) -> AnySequence<Element> {
-        asyncApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
+        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { queue, elem in
             if try! f(elem) {
                 queue.put(elem)
             }
         }
     }
 
-    func asyncForEach(
+    func parallelForEach(
         maxTasks: Int? = MAX_TASKS,
         maxSize: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> Void
     ) {
-        asyncApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { _, elem in
+        parallelApply(maxTasks: maxTasks, maxSize: maxSize, dispatch: dispatch) { _, elem in
             try! f(elem)
         }.forEach {}
     }

@@ -4,13 +4,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "AsyncSequence",
+    name: "Stream",
     products: [
-        .library(name: "AsyncSequence", targets: ["AsyncSequence"]),
+        .library(name: "Stream", targets: ["Stream"]),
     ],
     dependencies: [],
     targets: [
-        .target(name: "AsyncSequence", dependencies: []),
-        .testTarget(name: "AsyncSequenceTests", dependencies: ["AsyncSequence"]),
+        .target(name: "Stream", dependencies: []),
+        .testTarget(name: "StreamTests", dependencies: ["Stream"]),
     ]
 )
