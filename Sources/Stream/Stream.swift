@@ -27,7 +27,7 @@ extension Stream: LazySequenceProtocol {
 
 internal extension Stream {
     func apply<B>(
-        maxTasks: Int? = CPU_COUNT,
+        maxTasks: Int = CPU_COUNT,
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (ConcurrentQueue<B?>, Element) throws -> Void
@@ -42,20 +42,20 @@ internal extension Stream {
                     first = false
                     let dispatch = dispatch ?? DISPATCH
                     // let dispatch = dispatch ?? DispatchQueue(label: UUID().uuidString, attributes: .concurrent)
-                    let semaphore = maxTasks.map { DispatchSemaphore(value: $0) }
+                    let semaphore = DispatchSemaphore(value: maxTasks)
 
                     dispatch.async {
                         let group = DispatchGroup()
 
                         for elem in self {
                             group.enter()
-                            semaphore?.wait()
+                            semaphore.wait()
 
                             dispatch.async {
                                 try! f(queue, elem)
 
                                 group.leave()
-                                semaphore?.signal()
+                                semaphore.signal()
                             }
                         }
                         group.wait()
@@ -71,7 +71,7 @@ internal extension Stream {
     }
 
     func map<B>(
-        maxTasks: Int? = CPU_COUNT,
+        maxTasks: Int = CPU_COUNT,
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> B
@@ -86,7 +86,7 @@ internal extension Stream {
     }
 
     func flatMap<B, S: Sequence>(
-        maxTasks: Int? = CPU_COUNT,
+        maxTasks: Int = CPU_COUNT,
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> S
@@ -103,7 +103,7 @@ internal extension Stream {
     }
 
     func filter(
-        maxTasks: Int? = CPU_COUNT,
+        maxTasks: Int = CPU_COUNT,
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> Bool
@@ -116,7 +116,7 @@ internal extension Stream {
     }
 
     func forEach(
-        maxTasks: Int? = CPU_COUNT,
+        maxTasks: Int = CPU_COUNT,
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> Void
