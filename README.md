@@ -34,7 +34,27 @@ _ = getURLs()
         storeImage($0)
     }
 ```
-`Stream` inherits from `LazySequence` so you can treat it like a normal Sequence for other purposes. 
+`Stream` inherits from `LazySequence` so you can treat it like a normal Sequence for other purposes. By default the results of each stream may come in any order which has better performance, but if you do want to preserve order you can turn a `Stream` into an `OrderedStream` via the `.inOrder` property. 
+
+```swift
+import Stream
+
+_ = getURLs()
+    .stream
+    .inOrder
+    .map {
+        downloadImage($0)
+    }
+    .filter {
+        validateImage($0)
+    }
+    .flatMap {
+        getMultipleImageSizes($0)
+    }
+    .forEach {
+        storeImage($0)
+    }
+```
 
 #### Back-pressure
 To manage resources you can use the `maxTasks` and `queueMax` parameters: 

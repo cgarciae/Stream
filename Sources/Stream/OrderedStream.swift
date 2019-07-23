@@ -247,7 +247,7 @@ internal extension OrderedStream {
 }
 
 public extension Stream {
-    var ordered: OrderedStream<Element> {
+    var inOrder: OrderedStream<Element> {
         OrderedStream(base)
     }
 }
