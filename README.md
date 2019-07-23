@@ -51,9 +51,6 @@ _ = getURLs()
     .flatMap {
         getMultipleImageSizes($0)
     }
-    .forEach {
-        storeImage($0)
-    }
 ```
 
 #### Back-pressure
