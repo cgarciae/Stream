@@ -1,27 +1,28 @@
 import Foundation
 
-public let DISPATCH = DispatchQueue(label: "Stream", attributes: .concurrent)
-public let CPU_COUNT = ProcessInfo.processInfo.activeProcessorCount
-
-public struct Stream<Base: Sequence> {
+public struct Stream<Element> {
     // @usableFromInline
-    internal var _base: Base
+    internal var base: AnySequence<Element>
 
     /// Creates a sequence that has the same elements as `base`, but on
     /// which some operations such as `map` and `filter` are implemented
     /// lazily.
     // @inlinable // lazy-performance
-    internal init(_ _base: Base) {
-        self._base = _base
+    internal init<S: Sequence>(_ base: S) where S.Element == Element {
+        self.base = AnySequence<Element>(base)
+    }
+
+    internal init(_ base: AnySequence<Element>) {
+        self.base = base
     }
 }
 
 extension Stream: LazySequenceProtocol {
-    public typealias Element = Base.Element
-    public typealias Iterator = Base.Iterator
+    public typealias Element = Element
+    public typealias Iterator = AnySequence<Element>.Iterator
 
     public func makeIterator() -> Self.Iterator {
-        return _base.makeIterator()
+        return base.makeIterator()
     }
 }
 
@@ -31,7 +32,7 @@ internal extension Stream {
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (ConcurrentQueue<B?>, Element) throws -> Void
-    ) -> Stream<AnySequence<B>> {
+    ) -> Stream<B> {
         let sequence = AnySequence<B> { () -> AnyIterator<B> in
 
             var first = true
@@ -67,7 +68,7 @@ internal extension Stream {
             }
         }
 
-        return Stream<AnySequence>(sequence)
+        return Stream<B>(sequence)
     }
 
     func map<B>(
@@ -75,7 +76,7 @@ internal extension Stream {
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> B
-    ) -> Stream<AnySequence<B>> {
+    ) -> Stream<B> {
         apply(
             maxTasks: maxTasks,
             queueMax: queueMax,
@@ -90,7 +91,7 @@ internal extension Stream {
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> S
-    ) -> Stream<AnySequence<B>> where S.Element == B {
+    ) -> Stream<B> where S.Element == B {
         apply(
             maxTasks: maxTasks,
             queueMax: queueMax,
@@ -107,7 +108,7 @@ internal extension Stream {
         queueMax: Int? = nil,
         dispatch: DispatchQueue? = nil,
         f: @escaping (Element) throws -> Bool
-    ) -> Stream<AnySequence<Element>> {
+    ) -> Stream<Element> {
         apply(maxTasks: maxTasks, queueMax: queueMax, dispatch: dispatch) { queue, elem in
             if try! f(elem) {
                 queue.put(elem)
@@ -134,7 +135,7 @@ internal extension Stream {
 }
 
 public extension Sequence {
-    var stream: Stream<Self> {
+    var stream: Stream<Element> {
         Stream(self)
     }
 }
